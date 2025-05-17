@@ -35,27 +35,15 @@ func (converterAMD64) GetArchitecture() string {
 	return amd64
 }
 
-func (converterAMD64) AddGraphicsDevice(_ *v1.VirtualMachineInstance, domain *api.Domain, isEFI bool) {
-	// For AMD64 + EFI, use bochs. For BIOS, use VGA
-	if isEFI {
-		domain.Spec.Devices.Video = []api.Video{
-			{
-				Model: api.VideoModel{
-					Type:  "bochs",
-					Heads: pointer.P(graphicsDeviceDefaultHeads),
-				},
+func (converterAMD64) AddGraphicsDevice(_ *v1.VirtualMachineInstance, domain *api.Domain, _ bool) {
+	domain.Spec.Devices.Video = []api.Video{
+		{
+			Model: api.VideoModel{
+				Type:  v1.VirtIO,
+				Heads: pointer.P(graphicsDeviceDefaultHeads),
+				VRam:  pointer.P(graphicsDeviceDefaultVRAM),
 			},
-		}
-	} else {
-		domain.Spec.Devices.Video = []api.Video{
-			{
-				Model: api.VideoModel{
-					Type:  "vga",
-					Heads: pointer.P(graphicsDeviceDefaultHeads),
-					VRam:  pointer.P(graphicsDeviceDefaultVRAM),
-				},
-			},
-		}
+		},
 	}
 }
 

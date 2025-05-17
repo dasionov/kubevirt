@@ -1887,7 +1887,10 @@ var _ = Describe("Converter", func() {
 
 			if autoAttach == nil || *autoAttach {
 				switch arch {
-				case amd64, ppc64le:
+				case amd64:
+					Expect(domain.Spec.Devices.Video[0].Model.Type).To(Equal(v1.VirtIO))
+					Expect(domain.Spec.Devices.Inputs).To(BeEmpty())
+				case ppc64le:
 					Expect(domain.Spec.Devices.Video[0].Model.Type).To(Equal("vga"))
 					Expect(domain.Spec.Devices.Inputs).To(BeEmpty())
 				case arm64:
@@ -2888,15 +2891,15 @@ var _ = Describe("Converter", func() {
 				Expect(domainSpec.Devices.Video[0].Model.VRam).To(BeNil())
 			}
 		},
-			Entry("VGA on amd64 with BIOS and BochsDisplayForEFIGuests unset", amd64, v1.Bootloader{BIOS: &v1.BIOS{}}, false, "vga"),
-			Entry("VGA on amd64 with BIOS and BochsDisplayForEFIGuests set", amd64, v1.Bootloader{BIOS: &v1.BIOS{}}, true, "vga"),
-			Entry("VGA on amd64 with EFI and BochsDisplayForEFIGuests unset", amd64, v1.Bootloader{EFI: &v1.EFI{}}, false, "vga"),
-			Entry("Bochs on amd64 with EFI and BochsDisplayForEFIGuests set", amd64, v1.Bootloader{EFI: &v1.EFI{}}, true, "bochs"),
+			Entry("VIRTIO on amd64 with BIOS and BochsDisplayForEFIGuests unset", amd64, v1.Bootloader{BIOS: &v1.BIOS{}}, false, "virtio"),
+			Entry("VIRTIO on amd64 with BIOS and BochsDisplayForEFIGuests set", amd64, v1.Bootloader{BIOS: &v1.BIOS{}}, true, "virtio"),
+			Entry("VIRTIO on amd64 with EFI and BochsDisplayForEFIGuests unset", amd64, v1.Bootloader{EFI: &v1.EFI{}}, false, "virtio"),
+			Entry("VIRTIO on amd64 with EFI and BochsDisplayForEFIGuests set", amd64, v1.Bootloader{EFI: &v1.EFI{}}, true, "virtio"),
 
-			Entry("VIRTIO on amd64 with BIOS and BochsDisplayForEFIGuests unset", arm64, v1.Bootloader{BIOS: &v1.BIOS{}}, false, "virtio"),
-			Entry("VIRTIO on amd64 with BIOS and BochsDisplayForEFIGuests set", arm64, v1.Bootloader{BIOS: &v1.BIOS{}}, true, "virtio"),
-			Entry("VIRTIO on amd64 with EFI and BochsDisplayForEFIGuests unset", arm64, v1.Bootloader{EFI: &v1.EFI{}}, false, "virtio"),
-			Entry("VIRTIO on amd64 with EFI and BochsDisplayForEFIGuests set", arm64, v1.Bootloader{EFI: &v1.EFI{}}, true, "virtio"),
+			Entry("VIRTIO on arm64 with BIOS and BochsDisplayForEFIGuests unset", arm64, v1.Bootloader{BIOS: &v1.BIOS{}}, false, "virtio"),
+			Entry("VIRTIO on arm64 with BIOS and BochsDisplayForEFIGuests set", arm64, v1.Bootloader{BIOS: &v1.BIOS{}}, true, "virtio"),
+			Entry("VIRTIO on arm64 with EFI and BochsDisplayForEFIGuests unset", arm64, v1.Bootloader{EFI: &v1.EFI{}}, false, "virtio"),
+			Entry("VIRTIO on arm64 with EFI and BochsDisplayForEFIGuests set", arm64, v1.Bootloader{EFI: &v1.EFI{}}, true, "virtio"),
 
 			Entry("VIRTIO on s390x with BIOS and BochsDisplayForEFIGuests unset", s390x, v1.Bootloader{BIOS: &v1.BIOS{}}, false, "virtio"),
 			Entry("VIRTIO on s390x with BIOS and BochsDisplayForEFIGuests set", s390x, v1.Bootloader{BIOS: &v1.BIOS{}}, true, "virtio"),
