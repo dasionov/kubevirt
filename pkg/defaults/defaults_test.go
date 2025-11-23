@@ -192,4 +192,36 @@ var _ = Describe("Defaults", func() {
 			)
 		})
 	})
+
+	FContext("CPU topology defaulting", func() {
+		var vmi *v1.VirtualMachineInstance
+		const defaultCores = uint32(1)
+		const defaultSockets = uint32(1)
+		const defaultThreads = uint32(1)
+
+		BeforeEach(func() {
+			vmi = libvmi.New()
+		})
+
+		DescribeTable("should default CPU topology fields to 1 when they are 0",
+			func(initialCPU *v1.CPU) {
+				vmi.Spec.Domain.CPU = initialCPU
+
+				defaults.SetDefaultGuestCPUTopology(nil, &vmi.Spec)
+
+				Expect(vmi.Spec.Domain.CPU).ToNot(BeNil())
+				Expect(vmi.Spec.Domain.CPU.Cores).To(Equal(defaultCores))
+				Expect(vmi.Spec.Domain.CPU.Sockets).To(Equal(defaultSockets))
+				Expect(vmi.Spec.Domain.CPU.Threads).To(Equal(defaultThreads))
+			},
+			Entry("0,0,0", &v1.CPU{Cores: 0, Sockets: 0, Threads: 0}),
+			Entry("0,0,1", &v1.CPU{Cores: 0, Sockets: 0, Threads: 1}),
+			Entry("0,1,0", &v1.CPU{Cores: 0, Sockets: 1, Threads: 0}),
+			Entry("0,1,1", &v1.CPU{Cores: 0, Sockets: 1, Threads: 1}),
+			Entry("1,0,0", &v1.CPU{Cores: 1, Sockets: 0, Threads: 0}),
+			Entry("1,0,1", &v1.CPU{Cores: 1, Sockets: 0, Threads: 1}),
+			Entry("1,1,0", &v1.CPU{Cores: 1, Sockets: 1, Threads: 0}),
+			Entry("1,1,1", &v1.CPU{Cores: 1, Sockets: 1, Threads: 1}),
+		)
+	})
 })

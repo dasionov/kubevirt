@@ -286,14 +286,17 @@ func SetDefaultGuestCPUTopology(clusterConfig *virtconfig.ClusterConfig, spec *v
 	cores := uint32(1)
 	threads := uint32(1)
 	sockets := uint32(1)
+
+	// create cpu topology struct
+	if spec.Domain.CPU == nil {
+		spec.Domain.CPU = &v1.CPU{}
+	}
+
 	vmiCPU := spec.Domain.CPU
-	if vmiCPU == nil || (vmiCPU.Cores == 0 && vmiCPU.Sockets == 0 && vmiCPU.Threads == 0) {
-		// create cpu topology struct
-		if spec.Domain.CPU == nil {
-			spec.Domain.CPU = &v1.CPU{}
-		}
-		//if cores, sockets, threads are not set, take value from domain resources request or limits and
-		//set value into sockets, which have best performance (https://bugzilla.redhat.com/show_bug.cgi?id=1653453)
+
+	//if cores, sockets, threads are not set, take value from domain resources request or limits and
+	//set value into sockets, which have the best performance (https://bugzilla.redhat.com/show_bug.cgi?id=1653453)
+	if vmiCPU.Sockets == 0 {
 		resources := spec.Domain.Resources
 		if cpuLimit, ok := resources.Limits[k8sv1.ResourceCPU]; ok {
 			sockets = uint32(cpuLimit.Value())
@@ -301,9 +304,15 @@ func SetDefaultGuestCPUTopology(clusterConfig *virtconfig.ClusterConfig, spec *v
 			sockets = uint32(cpuRequests.Value())
 		}
 
-		spec.Domain.CPU.Sockets = sockets
-		spec.Domain.CPU.Cores = cores
-		spec.Domain.CPU.Threads = threads
+		vmiCPU.Sockets = sockets
+	}
+
+	if vmiCPU.Cores == 0 {
+		vmiCPU.Cores = cores
+	}
+
+	if vmiCPU.Threads == 0 {
+		vmiCPU.Threads = threads
 	}
 }
 
