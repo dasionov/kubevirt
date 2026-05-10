@@ -47,6 +47,7 @@ import (
 	"kubevirt.io/kubevirt/pkg/hypervisor"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/device/hostdevice/dra"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/network"
+	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/pci"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/storage"
 
 	"libvirt.org/go/libvirt"
@@ -1555,6 +1556,8 @@ func (l *LibvirtDomainManager) allocateHotplugPorts(
 	if err := network.WithNetworkIfacesResources(vmi, domainSpec, count, setDomainFn); err != nil {
 		return nil, err
 	}
+
+	pci.DisableHotplugOnOccupiedRootPorts(domainSpec)
 
 	return l.setDomainSpecWithHooks(vmi, domainSpec)
 }
