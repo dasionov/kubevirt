@@ -286,14 +286,11 @@ var _ = Describe("domain network interfaces resources", func() {
 		vmi.Spec.Domain.Devices.Interfaces = []v1.Interface{{}}
 		domainSpec := &api.DomainSpec{}
 		countCalls := 0
-		_, _ = WithNetworkIfacesResources(vmi, domainSpec, 0, func(v *v1.VirtualMachineInstance, s *api.DomainSpec) (cli.VirDomain, error) {
+		Expect(WithNetworkIfacesResources(vmi, domainSpec, 0, func(v *v1.VirtualMachineInstance, s *api.DomainSpec) (cli.VirDomain, error) {
 			countCalls++
 			return nil, nil
-		})
-		// The counter tracks the tested function behavior.
-		// It is expected that the callback function is called only once when there is no need
-		// to add placeholders interfaces.
-		Expect(countCalls).To(Equal(1))
+		})).To(Succeed())
+		Expect(countCalls).To(Equal(0))
 	})
 
 	It("are reserved when the default reserved interfaces count is 3", func() {
@@ -313,22 +310,13 @@ var _ = Describe("domain network interfaces resources", func() {
 
 		originalDomainSpec := domainSpec.DeepCopy()
 		countCalls := 0
-		_, err = WithNetworkIfacesResources(vmi, domainSpec, 3, func(v *v1.VirtualMachineInstance, s *api.DomainSpec) (cli.VirDomain, error) {
-			// Tracking the behavior of the tested function.
-			// It is expected that the callback function is called twice when placeholders are needed.
-			// The first time it is called with the placeholders in place.
-			// The second time it is called without the placeholders.
+		err = WithNetworkIfacesResources(vmi, domainSpec, 3, func(v *v1.VirtualMachineInstance, s *api.DomainSpec) (cli.VirDomain, error) {
 			countCalls++
-			if countCalls == 1 {
-				Expect(s.Devices.Interfaces).To(HaveLen(4))
-			} else {
-				Expect(s.Devices.Interfaces).To(Equal(originalDomainSpec.Devices.Interfaces))
-			}
-
+			Expect(s.Devices.Interfaces).To(HaveLen(4))
 			return mockLibvirt.VirtDomain, nil
 		})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(countCalls).To(Equal(2))
+		Expect(countCalls).To(Equal(1))
 		Expect(domainSpec.Devices.Interfaces).To(Equal(originalDomainSpec.Devices.Interfaces))
 	})
 })

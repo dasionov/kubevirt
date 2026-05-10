@@ -220,39 +220,41 @@ func indexedDomainInterfaces(domain *api.Domain) map[string]api.Interface {
 
 // WithNetworkIfacesResources adds network interfaces as placeholders to the domain spec
 // to trigger the addition of the dependent resources/devices (e.g. PCI controllers).
-// As its last step, it reads the generated configuration and removes the network interfaces
-// so none will be created with the domain creation.
-// The dependent devices are left in the configuration, to allow future hotplug.
+// It defines a throwaway domain with the placeholders, reads back the generated
+// configuration (which includes libvirt-assigned PCI addresses and controllers),
+// strips the placeholder interfaces, and copies the enriched device list back into
+// domainSpec. The caller is responsible for the final domain definition.
 func WithNetworkIfacesResources(
 	vmi *v1.VirtualMachineInstance,
 	domainSpec *api.DomainSpec,
 	count int,
 	f func(v *v1.VirtualMachineInstance, s *api.DomainSpec) (cli.VirDomain, error),
-) (retDomainClient cli.VirDomain, err error) {
-	if count > 0 {
-		domainSpecWithIfacesResource := AppendPlaceholderInterfacesToTheDomain(vmi, domainSpec, count)
-		dom, domErr := f(vmi, domainSpecWithIfacesResource)
-		if domErr != nil {
-			return nil, domErr
-		}
-
-		defer func() {
-			if freeErr := dom.Free(); freeErr != nil {
-				err = errors.Join(err, freeErr)
-			}
-		}()
-
-		domainSpecWithoutIfacePlaceholders, domErr := util.GetDomainSpecWithFlags(dom, libvirt.DOMAIN_XML_INACTIVE)
-		if domErr != nil {
-			return nil, domErr
-		}
-		domainSpecWithoutIfacePlaceholders.Devices.Interfaces = domainSpec.Devices.Interfaces
-		// Only the devices are taken into account because some parameters are not assured to be returned when
-		// getting the domain spec (e.g. the `qemu:commandline` section).
-		domainSpecWithoutIfacePlaceholders.Devices.DeepCopyInto(&domainSpec.Devices)
+) (err error) {
+	if count == 0 {
+		return nil
 	}
 
-	return f(vmi, domainSpec)
+	domainSpecWithIfacesResource := AppendPlaceholderInterfacesToTheDomain(vmi, domainSpec, count)
+	dom, err := f(vmi, domainSpecWithIfacesResource)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if freeErr := dom.Free(); freeErr != nil {
+			err = errors.Join(err, freeErr)
+		}
+	}()
+
+	domainSpecWithoutIfacePlaceholders, err := util.GetDomainSpecWithFlags(dom, libvirt.DOMAIN_XML_INACTIVE)
+	if err != nil {
+		return err
+	}
+	domainSpecWithoutIfacePlaceholders.Devices.Interfaces = domainSpec.Devices.Interfaces
+	// Only the devices are taken into account because some parameters are not assured to be returned when
+	// getting the domain spec (e.g. the `qemu:commandline` section).
+	domainSpecWithoutIfacePlaceholders.Devices.DeepCopyInto(&domainSpec.Devices)
+
+	return nil
 }
 
 func AppendPlaceholderInterfacesToTheDomain(vmi *v1.VirtualMachineInstance, domainSpec *api.DomainSpec, count int) *api.DomainSpec {

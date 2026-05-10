@@ -1552,14 +1552,11 @@ func (l *LibvirtDomainManager) allocateHotplugPorts(
 		return l.setDomainSpecWithHooks(v, s)
 	}
 
-	// leverage existing hotplug nic code to allocate ports
-	// should work for disks and any other devices as well
-	dom, err := network.WithNetworkIfacesResources(vmi, domainSpec, count, setDomainFn)
-	if err != nil {
+	if err := network.WithNetworkIfacesResources(vmi, domainSpec, count, setDomainFn); err != nil {
 		return nil, err
 	}
 
-	return dom, nil
+	return l.setDomainSpecWithHooks(vmi, domainSpec)
 }
 
 var checkIfDiskReadyToUse = checkIfDiskReadyToUseFunc
